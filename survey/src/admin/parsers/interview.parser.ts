@@ -37,11 +37,19 @@ export const parseInterviewAttributes: SurveyObjectParserInterview<CorrectedResp
     // update the assignedDate attribute:
     if (correctedResponse._assignedDay !== undefined) {
         correctedResponse.assignedDate = correctedResponse._assignedDay;
+        delete correctedResponse._assignedDay;
     }
 
     // update the languages attribute:
     if (correctedResponse._language && ['fr', 'en'].includes(correctedResponse._language)) {
         correctedResponse._languages = [correctedResponse._language];
+        delete correctedResponse._language;
+    }
+
+    // update respondend comments to map to the new evolution attribute name:
+    if (correctedResponse.commentsOnSurvey !== undefined) {
+        correctedResponse.respondentComments = correctedResponse.commentsOnSurvey;
+        delete correctedResponse.commentsOnSurvey;
     }
 
     return correctedResponse;

@@ -74,7 +74,7 @@ describe('parseInterviewAttributes', () => {
             const result = parseInterviewAttributes(correctedResponse);
 
             expect(result.assignedDate).toBe('2025-01-15');
-            expect(result._assignedDay).toBe('2025-01-15'); // Should preserve original
+            expect(result._assignedDay).toBeUndefined(); // Should be deleted
         });
 
         it('should handle missing _assignedDay', () => {
@@ -109,6 +109,7 @@ describe('parseInterviewAttributes', () => {
                 wouldLikeToParticipateInOtherSurveys: 'no',
                 _assignedDay: '2025-01-15',
                 _language: 'fr',
+                commentsOnSurvey: 'This is a test comment',
                 household: {
                     size: 3
                 }
@@ -121,32 +122,14 @@ describe('parseInterviewAttributes', () => {
             expect(result.wouldLikeToParticipateInOtherSurveys).toBe(false);
             expect(result.assignedDate).toBe('2025-01-15');
             expect(result._languages).toEqual(['fr']);
+            expect(result.respondentComments).toBe('This is a test comment');
+
+            // should delete the old attributes
+            expect(result._assignedDay).toBeUndefined(); // Should be deleted
+            expect(result._language).toBeUndefined(); // Should be deleted
+            expect(result.commentsOnSurvey).toBeUndefined(); // Should be deleted
 
             // Should preserve other attributes
-            expect(result.household?.size).toBe(3);
-        });
-
-        it('should handle all conversions simultaneously', () => {
-            const correctedResponse: CorrectedResponse = {
-                acceptToBeContactedForHelp: 'yes',
-                wouldLikeToParticipateInOtherSurveys: 'no',
-                _assignedDay: '2025-02-01',
-                _language: 'en',
-                household: {
-                    size: 3
-                }
-            };
-
-            const result = parseInterviewAttributes(correctedResponse);
-
-            // Should parse the target attributes
-            expect(result.acceptToBeContactedForHelp).toBe(true);
-            expect(result.wouldLikeToParticipateInOtherSurveys).toBe(false);
-            expect(result.assignedDate).toBe('2025-02-01');
-            expect(result._languages).toEqual(['en']);
-
-            // Should preserve other attributes
-            expect(result._assignedDay).toBe('2025-02-01');
             expect(result.household?.size).toBe(3);
         });
     });
@@ -173,7 +156,8 @@ describe('parseInterviewAttributes', () => {
             const correctedResponse: CorrectedResponse = {
                 acceptToBeContactedForHelp: 'yes',
                 wouldLikeToParticipateInOtherSurveys: 'no',
-                _language: 'fr'
+                _language: 'fr',
+                commentsOnSurvey: 'This is a test comment',
             };
 
             // First parsing should convert 'yes' to true, 'no' to false, and add languages array
@@ -181,18 +165,21 @@ describe('parseInterviewAttributes', () => {
             expect(result1.acceptToBeContactedForHelp).toBe(true);
             expect(result1.wouldLikeToParticipateInOtherSurveys).toBe(false);
             expect(result1._languages).toEqual(['fr']);
+            expect(result1.respondentComments).toBe('This is a test comment');
 
             // Second parsing should leave values unchanged (idempotent)
             const result2 = parseInterviewAttributes(result1);
             expect(result2.acceptToBeContactedForHelp).toBe(true);
             expect(result2.wouldLikeToParticipateInOtherSurveys).toBe(false);
             expect(result2._languages).toEqual(['fr']);
+            expect(result2.respondentComments).toBe('This is a test comment');
 
             // Third parsing should still leave values unchanged
             const result3 = parseInterviewAttributes(result2);
             expect(result3.acceptToBeContactedForHelp).toBe(true);
             expect(result3.wouldLikeToParticipateInOtherSurveys).toBe(false);
             expect(result3._languages).toEqual(['fr']);
+            expect(result3.respondentComments).toBe('This is a test comment');
         });
 
         it('should not create memory leaks with large datasets', () => {
@@ -202,6 +189,7 @@ describe('parseInterviewAttributes', () => {
                 wouldLikeToParticipateInOtherSurveys: 'no',
                 _assignedDay: '2025-01-15',
                 _language: 'en',
+                commentsOnSurvey: 'This is a test comment',
                 household: {
                     persons: {}
                 }
@@ -213,6 +201,7 @@ describe('parseInterviewAttributes', () => {
             expect(result.wouldLikeToParticipateInOtherSurveys).toBe(false);
             expect(result.assignedDate).toBe('2025-01-15');
             expect(result._languages).toEqual(['en']);
+            expect(result.respondentComments).toBe('This is a test comment');
             expect(result.household?.persons).toEqual({});
 
             // Add many persons to test memory usage
@@ -226,11 +215,16 @@ describe('parseInterviewAttributes', () => {
 
             // Test that the parser works correctly even after adding large dataset
             // and that repeated parsing doesn't cause issues (idempotent)
+            // also make sure the old attributes are deleted
             const result2 = parseInterviewAttributes(result);
             expect(result2.acceptToBeContactedForHelp).toBe(true);
             expect(result2.wouldLikeToParticipateInOtherSurveys).toBe(false);
             expect(result2.assignedDate).toBe('2025-01-15');
             expect(result2._languages).toEqual(['en']);
+            expect(result2.respondentComments).toBe('This is a test comment'); // Should be deleted
+            expect(result2._assignedDay).toBeUndefined(); // Should be deleted
+            expect(result2._language).toBeUndefined(); // Should be deleted
+            expect(result2.commentsOnSurvey).toBeUndefined(); // Should be deleted
         });
     });
 });
